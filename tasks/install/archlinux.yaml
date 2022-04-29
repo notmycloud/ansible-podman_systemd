@@ -1,0 +1,33 @@
+---
+- name: "Podman | {{ ansible_os_family }} | Installing Podman packages"
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - podman
+    - runc
+    - buildah
+    - skopeo
+    - slirp4netns
+    - crun
+    - aardvark-dns
+
+- name: "Podman | {{ ansible_os_family }} | Installing Cockpit package"
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - cockpit
+    - cockpit-podman
+  when: 
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT is defined
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT
+
+- name: "Podman | {{ ansible_os_family }} | Enabling Cockpit"
+  ansible.builtin.systemd:
+    name: cockpit.socket
+    state: started
+    enabled: true
+  when: 
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT is defined
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT

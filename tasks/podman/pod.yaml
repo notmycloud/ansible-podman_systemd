@@ -1,0 +1,94 @@
+---
+# - name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Create infra service"
+#   ansible.builtin.include_tasks: 
+#     file: "container.yaml"
+#     apply:
+#       become_user: "{{ pm_user }}"
+#       become: yes
+#   vars:
+#     container_name: "{{ pod }}"
+#     container:
+#       service_options:
+#         options: "{{ pm_pod.value.infra.service_options }}"
+
+- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Debug pm_pod"
+  ansible.builtin.debug:
+    var: pm_pod
+
+- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Construct Podman service options"
+  ansible.builtin.set_fact:
+    podman_service:
+      config: 
+        Unit:
+          Description: "Podman {{ pod }}-pod.service"
+          Documentation: 
+            - man:podman-pod-run(1)
+            - "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/building_running_and_managing_containers/assembly_porting-containers-to-systemd-using-podman_building-running-and-managing-containers"
+          Wants: 
+            - network.target
+          After: 
+            - network-online.target
+          # TODO: Test for volume paths
+          # AssertPathExists:
+        Service:
+          Environment:
+            - 'PODMAN_SYSTEMD_UNIT=%n'
+          ExecStartPre: 
+            - '-/bin/rm -f %t/%n.pod-id'
+            - '-/bin/rm -f %t/%n.pid'
+            # - "-/usr/bin/podman pod rm -f {{ pod }}"
+            - >-
+              /usr/bin/podman pod create
+              --name {{ pod }}
+              --net slirp4netns:allow_host_loopback=true,enable_ipv6=true
+              --infra-conmon-pidfile %t/%n.pid
+              --pod-id-file %t/%n.pod-id
+              --replace
+              {% if pm_pod.value.infra.podman_options.ports is defined %}
+              {% for port in pm_pod.value.infra.podman_options.ports %}
+              -p {{ port }}
+              {% endfor %}
+              {% endif %}
+          ExecStart: 
+            - "/usr/bin/podman pod start --pod-id-file %t/%n.pod-id"
+          ExecStop: 
+            - "/usr/bin/podman pod stop --ignore --pod-id-file %t/%n.pod-id -t 10"
+          ExecStopPost: 
+            - "/usr/bin/podman pod rm -f --ignore --pod-id-file %t/%n.pod-id"
+          Type: forking
+          PIDFile: '%t/%n.pid'
+          Restart: 'on-failure'
+        Install:
+          WantedBy: 
+            - multi-user.target
+            - default.target
+
+
+- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Merge systemd config"
+  ansible.builtin.set_fact: 
+    pod_service: "{% if pm_pod.value.infra.service_options is defined %}{{ podman_service | combine(pm_pod.value.infra.service_options, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
+
+- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Create Infra systemd service"
+  ansible.builtin.include_role: 
+    name: djarbz.systemd-unit.v2
+  vars:
+    systemd_units:
+      "{{ pm_user }}":
+        enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('yes')}}{% endif %}"
+        service:
+          "{{ pod }}-pod": "{{ pod_service }}"
+
+
+- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Create pod container services"
+  ansible.builtin.include_tasks: 
+    file: "container.yaml"
+    apply:
+      become_user: "{{ pm_user }}"
+      become: yes
+  vars:
+    container_name: "{{ pod }}-{{ pod_container.key }}"
+    container: "{{ pod_container.value }}"
+  when: pod_container.key != 'infra'
+  loop: "{{ pm_pod.value | dict2items }}"
+  loop_control:
+    loop_var: pod_container

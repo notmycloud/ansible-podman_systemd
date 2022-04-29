@@ -1,0 +1,50 @@
+---
+# See https://github.com/alvistack/ansible-role-podman/blob/master/vars/debian-11.yml
+# https://build.opensuse.org/project/show/home:alvistack
+- name: "Podman | {{ ansible_os_family }} | Install Alvistack Repo Key for latest Podman"
+  ansible.builtin.apt_key:
+    id: "789CFFDE0295B8A1F4E5690C4BECC97550D0B1FD"
+    keyring: "/etc/apt/trusted.gpg.d/home_alvistack.gpg"
+    url: "http://download.opensuse.org/repositories/home:/alvistack/{{ ansible_distribution }}_{{ ansible_distribution_major_version | lower }}/Release.key"
+
+- name: "Podman | {{ ansible_os_family }} | Install Alvistack Repo for latest Podman"
+  ansible.builtin.apt_repository:
+    repo: "deb http://download.opensuse.org/repositories/home:/alvistack/{{ ansible_distribution }}_{{ ansible_distribution_major_version | lower }}/ /"
+
+- name: "Podman | {{ ansible_os_family }} | Installing Podman packages"
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - podman
+    - runc
+    - buildah
+    - skopeo
+    - uidmap
+    - slirp4netns
+    - crun
+
+- name: "Podman | {{ ansible_os_family }} | Installing Cockpit package"
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - cockpit
+    - cockpit-podman
+  when: 
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT is defined
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT
+
+# https://www.digitalocean.com/community/tutorials/how-to-install-cockpit-on-debian-10#:~:text=You%20created%20this,udisks2%20are%20installed.
+# You created this directory to stop a harmless, but distracting warning, from displaying in your Cockpit instance. 
+# This warning appears because the udisks2 utility is unable to find the /usr/lib/x86_64-linux-gnu/udisks2/modules 
+# directory, which is not created by default unless additional udisks2 are installed.
+- name: "Podman | {{ ansible_os_family }} | Fix Cockpit udisk2 error"
+  ansible.builtin.file:
+    path: "/usr/lib/x86_64-linux-gnu/udisks2/modules"
+    state: directory
+    mode: '0755'
+    # recurse: yes
+  when: 
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT is defined
+    - PODMAN_SYSTEMD_INSTALL_COCKPIT

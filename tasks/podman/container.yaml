@@ -1,0 +1,172 @@
+---
+# - name: "{{ pm_user }} | Systemd | Container | {{ container_name }} | Debug Container"
+#   ansible.builtin.debug:
+#     var: container
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create Host Bind Mounts"
+  ansible.builtin.file:
+    path: "{{ volume.host }}"
+    state: "{{ volume.create.state }}"
+    recurse: "{% if volume.create.state == 'directory'%}true{% else %}false{% endif %}"
+    mode: "{{ volume.create.mode | default(omit) }}"
+    owner: "{{ volume.create.owner | default(omit) }}"
+    group: "{{ volume.create.group | default(omit) }}"
+  when: volume.create.state is defined
+  loop: "{{ container.podman_options.volumes }}"
+  loop_control:
+    loop_var: volume
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Pull Podman Image"
+  containers.podman.podman_image:
+    name: "{{ container.podman_options.image.split(':')[0] }}"
+    tag: "{{ container.podman_options.image.split(':')[1] }}"
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Construct Podman command"
+  ansible.builtin.set_fact:
+    podman_start_cmd: |-
+      /usr/bin/podman run
+      --name {{ container_name }}
+      {% if isPod %}
+      --pod {{ pod }}
+      {% else %}
+      -d
+      {% endif %}
+      --cidfile=%t/%n.ctr-id --sdnotify=conmon --cgroups=no-conmon
+      --conmon-pidfile=%t/%n.pid
+      --replace
+      {% if not isPod or container.podman_options.network is defined %}
+      --network {{ container.podman_options.network | default("slirp4netns:allow_host_loopback=true,enable_ipv6=true") }}
+      {% endif %}
+      {% if container.podman_options.replace is defined %}
+      {% if container.podman_options.replace %}
+      --replace
+      {% endif %}
+      {% endif %}
+      --restart {{ container.podman_options.restart | default("no") }}
+      {% if container.podman_options.remove | default('yes') %}
+      --rm
+      {% endif %}
+      {% if container.podman_options.healthcheck is defined %}
+      {% if container.podman_options.healthcheck.cmd is defined %}
+      --health-cmd '{{ container.podman_options.healthcheck.cmd }}'
+      {% endif %}
+      {% if container.podman_options.healthcheck.interval is defined %}
+      --health-interval {{ container.podman_options.healthcheck.interval }}
+      {% endif %}
+      {% if container.podman_options.healthcheck.retries is defined %}
+      --health-retries {{ container.podman_options.healthcheck.retries }}
+      {% endif %}
+      {% if container.podman_options.healthcheck.timeout is defined %}
+      --health-timeout {{ container.podman_options.healthcheck.timeout }}
+      {% endif %}
+      {% if container.podman_options.healthcheck.delay is defined %}
+      --health-start-period {{ container.podman_options.healthcheck.delay }}
+      {% endif %}
+      {% if container.podman_options.healthcheck.start_period is defined %}
+      --health-start-period {{ container.podman_options.healthcheck.start_period }}
+      {% endif %}
+      {% endif %}
+      {% if container.podman_options.environment is defined %}
+      {% for env in container.podman_options.environment %}
+      --env {{ env }}={{ container.podman_options.environment[env] }}
+      {% endfor %}
+      {% endif %}
+      {% if container.podman_options.ports is defined %}
+      {% for port in container.podman_options.ports %}
+      -p {{ port }}
+      {% endfor %}
+      {% endif %}
+      {% if container.podman_options.volumes is defined %}
+      {% for volume in container.podman_options.volumes %}
+      -v {{ volume.host | default(none) }}{% if volume.host is defined %}:{% endif %}{{ volume.container }}{% if volume.options is defined %}:{% endif %}{{ volume.options }}
+      {% endfor %}
+      {% endif %}
+      {% if container.podman_options.labels is defined %}
+      {% for label in container.podman_options.labels %}
+      -l "{{ label }}"
+      {% endfor %}
+      {% endif %}
+      {{ container.podman_options.other_options | default(none) }}
+      {{ container.podman_options.image }}
+      {% if container.podman_options.image_command is defined %}
+      {{ container.podman_options.image_command }}
+      {% endif %}
+      {% if container.podman_options.image_args is defined %}
+      {% for arg in container.podman_options.image_args %}
+      {{ arg }}
+      {% endfor %}
+      {% endif %}
+
+# - name: "{{ pm_user }} | Systemd | Container | {{ container_name }} | Debug Podman Run Command"
+#   ansible.builtin.debug:
+#     msg: "{{ podman_start_cmd | regex_replace('\n+', ' \\\n\t')}}"
+
+# - meta: end_play
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Construct Podman service options"
+  ansible.builtin.set_fact:
+    podman_service:
+      Unit:
+        Description: "Podman {{ container_name }}.service"
+        Documentation: 
+          - man:podman-run(1)
+          - "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/building_running_and_managing_containers/assembly_porting-containers-to-systemd-using-podman_building-running-and-managing-containers"
+        Wants: 
+          - network-online.target
+        BindsTo:
+          - "{{ pod | default(none) }}{% if pod is defined %}-pod.service{% endif %}"
+        After: 
+          - network-online.target
+          - "{{ pod | default(none) }}{% if pod is defined %}-pod.service{% endif %}"
+        PartOf:
+          - "{{ pod | default(none) }}{% if pod is defined %}-pod.service{% endif %}"
+        RequiresMountsFor: '%t/containers'
+        # TODO: Test for volume paths
+        # AssertPathExists:
+      Service:
+        Environment:
+          - 'PODMAN_SYSTEMD_UNIT=%n'
+        ExecStartPre: 
+          # - "-/usr/bin/podman pull {{ container.podman_options.image }}"
+          - "-/usr/bin/podman rm -f --ignore --cidfile=%t/%n.ctr-id"
+          - '-/bin/rm -f %t/%n.ctr-id'
+          - '-/bin/rm -f %t/%n.pid'
+        ExecStart:  
+          - "{{ podman_start_cmd | regex_replace('\n\n+', ' \n') | regex_replace('\n+', ' \\\n\t') }}"
+        ExecReload: 
+          - "-/usr/bin/podman stop --ignore --cidfile=%t/%n.ctr-id"
+          - "-/usr/bin/podman rm -f --ignore --cidfile=%t/%n.ctr-id"
+        ExecStop: 
+          - '/usr/bin/podman stop --ignore --cidfile=%t/%n.ctr-id'
+        ExecStopPost: 
+          - '/usr/bin/podman rm -f --ignore --cidfile=%t/%n.ctr-id'
+        Type: notify
+        NotifyAccess: all
+        PIDFile: '%t/%n.pid'
+        Restart: 'on-failure'
+      Install:
+        WantedBy: 
+          - multi-user.target
+          - default.target
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Merge systemd config"
+  ansible.builtin.set_fact: 
+    container_service: "{% if container.service_options.config is defined %}{{ podman_service | combine(container.service_options.config, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | construct config for systemd service"
+  ansible.builtin.set_fact:
+    systemd_units:
+      "{{ pm_user }}":
+        enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('yes')}}{% endif %}"
+        service:
+          "{{ container_name }}": 
+            config: "{{ container_service }}"
+            options: "{{ container.service_options.options | default(none) }}"
+
+# - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Pull image"
+#   containers.podman.podman_image:
+#     name: "{{ container.podman_options.image }}"
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd service"
+  ansible.builtin.include_role: 
+    name: notmycloud.systemd_unit

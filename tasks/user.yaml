@@ -1,0 +1,28 @@
+---
+- name: "Podman | {{ pm_user }} | Rootless configuration"
+  ansible.builtin.include_tasks: 
+    file: "podman/rootless.yaml"
+    apply:
+      become: yes
+  when: pm_user != "root"
+
+- name: "Podman | {{ pm_user }} | Configure Podman"
+  ansible.builtin.include_tasks: 
+    file: "podman/config.yaml"
+    apply:
+      become_user: "{{ pm_user }}"
+      become: yes
+  vars:
+    pm_config: "{{ podman.value.config }}"
+    pm_config_path: "{% if pm_user == 'root' %}/etc/containers{% else %}~/.config/containers{% endif %}"
+
+- name: "Podman | {{ pm_user }} | Setup Podman services"
+  ansible.builtin.include_tasks: 
+    file: "podman/systemd.yaml"
+    apply:
+      become_user: "{{ pm_user }}"
+      become: yes
+  vars:
+    pm_systemd: "{{ podman.value.systemd }}"
+    pm_systemd_path: "{% if pm_user == 'root' %}/etc/systemd/system{% else %}~/.config/systemd/user{% endif %}"
+    

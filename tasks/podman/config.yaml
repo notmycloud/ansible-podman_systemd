@@ -1,0 +1,59 @@
+---
+- name: "Podman | {{ pm_user }} | Config | Podman storage options"
+  ansible.builtin.include_role:
+    name: notmycloud.yaml2ini
+    # apply:
+    #   become_user: "{{ pm_user }}"
+    #   become: yes
+  vars:
+    YAML2INI_OPTIONS:
+      path: "{{ pm_config_path }}/storage.conf"
+    YAML2INI_DATA:
+      "{{ pm_config.storage }}"
+    YAML2INI_QUOTE_VALUES: true
+  when: pm_config.storage is defined
+
+## TODO: not sure how to perform as the following command. Stuck on the -e argument which makes the new path equal to old path.
+# semanage fcontext -a -e /var/lib/containers/storage /NEWSTORAGEPATH
+# ALSO: need to run the following command if this state is changed, perhaps via cmd module?
+# restorecon -R -v /NEWSTORAGEPATH
+# - name: "Podman | {{ pm_user }} | Config | Podman storage Graphroot adjustments"
+#   community.general.sefcontext:
+#     target: "{{ pm_config.storage.storage.graphroot }}"
+#     setype: httpd_git_rw_content_t
+#     state: present
+#   when: pm_config.storage.storage.graphroot is defined
+      
+- name: "Podman | {{ pm_user }} | Config | Podman container options"
+  ansible.builtin.copy:
+    dest: "{{ pm_config_path }}/containers.conf"
+    content: "{{ pm_config.containers | to_toml }}"
+    mode: '0644'
+  when: pm_config.containers is defined
+
+- name: "Podman | {{ pm_user }} | Config | Pull custom Infra Image"
+  containers.podman.podman_image:
+    name: "{{ pm_config.containers.engine.infra_image.split(':')[0] }}"
+    tag: "{{ pm_config.containers.engine.infra_image.split(':')[1] }}"
+  when: pm_config.containers.engine.infra_image is defined
+      
+- name: "Podman | {{ pm_user }} | Config | Podman registry options"
+  ansible.builtin.copy:
+    dest: "{{ pm_config_path }}/registries.conf"
+    content: "{{ pm_config.registries | to_toml }}"
+    mode: '0644'
+  when: pm_config.registries is defined
+  
+- name: "Podman | {{ pm_user }} | Config | Login to container registries"
+  containers.podman.podman_login:
+    authfile: "{{ login.authfile | default(omit) }}"
+    certdir: "{{ login.certdir | default(omit) }}"
+    executable: "{{ login.executable | default(omit) }}"
+    password: "{{ login.password }}"
+    registry: "{{ login.registry | default(omit) }}"
+    tlsverify: "{{ login.tlsverify | default(omit) }}"
+    username: "{{ login.username }}"
+  when: pm_config.login is defined
+  loop: "{{ pm_config.login }}"
+  loop_control:
+    loop_var: login
