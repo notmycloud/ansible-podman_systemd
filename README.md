@@ -2,6 +2,8 @@
 ## Description
 Configure Podman Systemd Units for system and rootless users.
 
+IMPORTANT: Requires the installation of the `toml` python package. Install with pip.
+
 ## Usage
 Provide the following variables for this role to operate correctly.
 `PODMAN_SYSTEMD_INSTALL_COCKPIT` will install Cockpit with Podman support.
