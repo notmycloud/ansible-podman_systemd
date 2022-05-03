@@ -15,6 +15,7 @@
   vars:
     pm_config: "{{ podman.value.config }}"
     pm_config_path: "{% if pm_user == 'root' %}/etc/containers{% else %}~/.config/containers{% endif %}"
+  when: podman.value.config is defined
 
 - name: "Podman | {{ pm_user }} | Setup Podman services"
   ansible.builtin.include_tasks: 
@@ -25,4 +26,5 @@
   vars:
     pm_systemd: "{{ podman.value.systemd }}"
     pm_systemd_path: "{% if pm_user == 'root' %}/etc/systemd/system{% else %}~/.config/systemd/user{% endif %}"
+  when: podman.value.systemd is defined
     

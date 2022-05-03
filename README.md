@@ -2,6 +2,12 @@
 ## Description
 Configure Podman Systemd Units for system and rootless users.
 
+## Installation
+The following roles are also required. If I add them as a dependency, they will execute which fails.
+- linuxhq.sysctl
+- notmycloud.yaml2ini
+- notmycloud.systemd_unit
+
 IMPORTANT: Requires the installation of the `toml` python package. Install with pip.
 
 ## Usage

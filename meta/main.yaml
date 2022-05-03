@@ -56,9 +56,10 @@ galaxy_info:
     # NOTE: A tag is limited to a single word comprised of alphanumeric characters.
     #       Maximum 20 tags per role.
 
-dependencies:
-  - linuxhq.sysctl
-  - notmycloud.yaml2ini
-  - notmycloud.systemd_unit
+# Dependencies auto-execute when the role is called prior to running the main role, this is not what we want!
+dependencies: []
+  # - linuxhq.sysctl
+  # - notmycloud.yaml2ini
+  # - notmycloud.systemd_unit
   # List your role dependencies here, one per line. Be sure to remove the '[]' above,
   # if you add dependencies to this list.
