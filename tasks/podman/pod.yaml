@@ -68,16 +68,36 @@
   ansible.builtin.set_fact: 
     pod_service: "{% if pm_pod.value.infra.service_options is defined %}{{ podman_service | combine(pm_pod.value.infra.service_options, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
 
-- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Create Infra systemd service"
-  ansible.builtin.include_role: 
-    name: djarbz.systemd-unit.v2
-  vars:
-    systemd_units:
-      "{{ pm_user }}":
-        enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('yes')}}{% endif %}"
-        service:
-          "{{ pod }}-pod": "{{ pod_service }}"
+# - name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Create Infra systemd service"
+#   ansible.builtin.include_role: 
+#     name: djarbz.systemd-unit.v2
+#   vars:
+#     systemd_units:
+#       "{{ pm_user }}":
+#         enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('yes')}}{% endif %}"
+#         service:
+#           "{{ pod }}-pod": "{{ pod_service }}"
 
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create service config"
+  ansible.builtin.set_fact:
+    container_dict: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
+  loop: "{{ (keys | zip(values)) | list }}"
+  vars:
+    keys:
+      - "{{ pod }}-pod"
+    values:
+      - "{{ pod_service }}"
+
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd config"
+  ansible.builtin.set_fact:
+    systemd_units: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
+  loop: "{{ (keys | zip(values)) | list }}"
+  vars:
+    keys:
+      - "{{ pm_user }}"
+    values:
+      - enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('true')}}{% endif %}"
+        service: "{{ container_dict }}"
 
 - name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Create pod container services"
   ansible.builtin.include_tasks: 

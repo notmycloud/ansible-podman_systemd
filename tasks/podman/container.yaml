@@ -152,9 +152,9 @@
           - multi-user.target
           - default.target
 
-- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Merge systemd config"
-  ansible.builtin.set_fact: 
-    container_service: "{% if container.service_options.config is defined %}{{ podman_service | combine(container.service_options.config, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
+# - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Merge systemd config"
+#   ansible.builtin.set_fact: 
+#     container_service: "{% if container.service_options.config is defined %}{{ podman_service | combine(container.service_options.config, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
 
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create service config"
   ansible.builtin.set_fact:
@@ -164,7 +164,7 @@
     keys:
       - "{{ container_name }}"
     values:
-      - config: "{{ container_service }}"
+      - config: "{% if container.service_options.config is defined %}{{ podman_service | combine(container.service_options.config, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
         options: "{{ container.service_options.options | default(none) }}"
 
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd config"
