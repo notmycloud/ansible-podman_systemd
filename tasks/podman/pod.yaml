@@ -11,11 +11,11 @@
 #       service_options:
 #         options: "{{ pm_pod.value.infra.service_options }}"
 
-- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Debug pm_pod"
-  ansible.builtin.debug:
-    var: pm_pod
+# - name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Debug pm_pod"
+#   ansible.builtin.debug:
+#     var: pm_pod
 
-- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Construct Podman service options"
+- name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Construct Podman service options"
   ansible.builtin.set_fact:
     podman_service:
       config: 
@@ -64,7 +64,7 @@
             - default.target
 
 
-- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Merge systemd config"
+- name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Merge systemd config"
   ansible.builtin.set_fact: 
     pod_service: "{% if pm_pod.value.infra.service_options is defined %}{{ podman_service | combine(pm_pod.value.infra.service_options, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
 
@@ -78,7 +78,7 @@
 #         service:
 #           "{{ pod }}-pod": "{{ pod_service }}"
 
-- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create service config"
+- name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Create service config"
   ansible.builtin.set_fact:
     container_dict: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
   loop: "{{ (keys | zip(values)) | list }}"
@@ -88,7 +88,7 @@
     values:
       - "{{ pod_service }}"
 
-- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd config"
+- name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Create systemd config"
   ansible.builtin.set_fact:
     systemd_units: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
   loop: "{{ (keys | zip(values)) | list }}"
@@ -99,7 +99,7 @@
       - enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('true')}}{% endif %}"
         service: "{{ container_dict }}"
 
-- name: "{{ pm_user }} | Systemd | Pod | {{ pod }} | Create pod container services"
+- name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Create pod container services"
   ansible.builtin.include_tasks: 
     file: "container.yaml"
     apply:
