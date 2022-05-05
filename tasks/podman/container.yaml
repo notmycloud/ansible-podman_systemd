@@ -33,17 +33,16 @@
       {% endif %}
       --cidfile=%t/%n.ctr-id --sdnotify=conmon --cgroups=no-conmon
       --conmon-pidfile=%t/%n.pid
-      --replace
       {% if not isPod or container.podman_options.network is defined %}
       --network {{ container.podman_options.network | default("slirp4netns:allow_host_loopback=true,enable_ipv6=true") }}
       {% endif %}
       {% if container.podman_options.replace is defined %}
-      {% if container.podman_options.replace %}
+      {% if container.podman_options.replace | default("true") %}
       --replace
       {% endif %}
       {% endif %}
       --restart {{ container.podman_options.restart | default("no") }}
-      {% if container.podman_options.remove | default('yes') %}
+      {% if container.podman_options.remove | default('true') %}
       --rm
       {% endif %}
       {% if container.podman_options.healthcheck is defined %}
@@ -97,9 +96,13 @@
       {% endfor %}
       {% endif %}
 
-# - name: "{{ pm_user }} | Systemd | Container | {{ container_name }} | Debug Podman Run Command"
+# - name: "Run Command | Before"
 #   ansible.builtin.debug:
-#     msg: "{{ podman_start_cmd | regex_replace('\n+', ' \\\n\t')}}"
+#     msg: "{{ podman_start_cmd }}"
+
+# - name: "Run Command | After"
+#   ansible.builtin.debug:
+#     msg: "{{ podman_start_cmd | trim | regex_replace('\n+', ' \\\n') }}"
 
 # - meta: end_play
 
@@ -132,7 +135,7 @@
           - '-/bin/rm -f %t/%n.ctr-id'
           - '-/bin/rm -f %t/%n.pid'
         ExecStart:  
-          - "{{ podman_start_cmd | regex_replace('\n\n+', ' \n') | regex_replace('\n+', ' \\\n\t') }}"
+          - "{{ podman_start_cmd | trim | regex_replace('\n+', ' \\\n') | indent(4, False) }}"
         ExecReload: 
           - "-/usr/bin/podman stop --ignore --cidfile=%t/%n.ctr-id"
           - "-/usr/bin/podman rm -f --ignore --cidfile=%t/%n.ctr-id"
@@ -153,20 +156,33 @@
   ansible.builtin.set_fact: 
     container_service: "{% if container.service_options.config is defined %}{{ podman_service | combine(container.service_options.config, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
 
-- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | construct config for systemd service"
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create service config"
   ansible.builtin.set_fact:
-    systemd_units:
-      "{{ pm_user }}":
-        enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('yes')}}{% endif %}"
-        service:
-          "{{ container_name }}": 
-            config: "{{ container_service }}"
-            options: "{{ container.service_options.options | default(none) }}"
+    container_dict: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
+  loop: "{{ (keys | zip(values)) | list }}"
+  vars:
+    keys:
+      - "{{ container_name }}"
+    values:
+      - config: "{{ container_service }}"
+        options: "{{ container.service_options.options | default(none) }}"
 
-# - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Pull image"
-#   containers.podman.podman_image:
-#     name: "{{ container.podman_options.image }}"
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd config"
+  ansible.builtin.set_fact:
+    systemd_units: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
+  loop: "{{ (keys | zip(values)) | list }}"
+  vars:
+    keys:
+      - "{{ pm_user }}"
+    values:
+      - enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('true')}}{% endif %}"
+        service: "{{ container_dict }}"
+
+# - name: Debug
+#   debug:
+#     var: systemd_units
+# - meta: end_play
 
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd service"
-  ansible.builtin.include_role: 
+  ansible.builtin.include_role:
     name: notmycloud.systemd_unit
