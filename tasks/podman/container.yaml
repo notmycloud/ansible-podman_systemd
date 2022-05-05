@@ -1,8 +1,4 @@
 ---
-# - name: "{{ pm_user }} | Systemd | Container | {{ container_name }} | Debug Container"
-#   ansible.builtin.debug:
-#     var: container
-
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create Host Bind Mounts"
   ansible.builtin.file:
     path: "{{ volume.host }}"
@@ -96,16 +92,6 @@
       {% endfor %}
       {% endif %}
 
-# - name: "Run Command | Before"
-#   ansible.builtin.debug:
-#     msg: "{{ podman_start_cmd }}"
-
-# - name: "Run Command | After"
-#   ansible.builtin.debug:
-#     msg: "{{ podman_start_cmd | trim | regex_replace('\n+', ' \\\n') }}"
-
-# - meta: end_play
-
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Construct Podman service options"
   ansible.builtin.set_fact:
     podman_service:
@@ -152,10 +138,6 @@
           - multi-user.target
           - default.target
 
-# - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Merge systemd config"
-#   ansible.builtin.set_fact: 
-#     container_service: "{% if container.service_options.config is defined %}{{ podman_service | combine(container.service_options.config, recursive=True) }}{% else %}{{ podman_service }}{% endif %}"
-
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create service config"
   ansible.builtin.set_fact:
     container_dict: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
@@ -177,11 +159,6 @@
     values:
       - enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('true')}}{% endif %}"
         service: "{{ container_dict }}"
-
-# - name: Debug
-#   debug:
-#     var: systemd_units
-# - meta: end_play
 
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd service"
   ansible.builtin.include_role:

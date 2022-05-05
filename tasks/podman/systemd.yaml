@@ -10,9 +10,6 @@
 - name: "Podman | {{ pm_user }} | Systemd | Create container services"
   ansible.builtin.include_tasks: 
     file: "container.yaml"
-    # apply:
-    #   become_user: "{{ pm_user }}"
-    #   become: yes
   vars:
     container_name: "{{ pm_container.key }}"
     container: "{{ pm_container.value }}"

@@ -32,6 +32,7 @@
           net.ipv4.ping_group_range: "0 4294967295"
   when: PODMAN_SYSTEMD_ALLOW_PING is defined
 
+# Region cni.lock error
 # https://github.com/containers/podman/issues/13402
 # - name: "Fix for cni.lock error | https://github.com/containers/podman/issues/13402"
 #   ansible.builtin.lineinfile:
@@ -39,8 +40,9 @@
 #     regexp: "^network_config_dir"
 #     line: '# network_config_dir = "/etc/cni/net.d"'
 #   become: true
+# endregion
 
-- name: "Podman | Per User Configuration"
+- name: "Podman | User | Configuration"
   ansible.builtin.include_tasks: 
     file: "user.yaml"
   vars:

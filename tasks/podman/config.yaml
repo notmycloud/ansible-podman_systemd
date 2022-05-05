@@ -2,9 +2,6 @@
 - name: "Podman | {{ pm_user }} | Config | Podman storage options"
   ansible.builtin.include_role:
     name: notmycloud.yaml2ini
-    # apply:
-    #   become_user: "{{ pm_user }}"
-    #   become: yes
   vars:
     YAML2INI_OPTIONS:
       path: "{{ pm_config_path }}/storage.conf"
@@ -13,6 +10,7 @@
     YAML2INI_QUOTE_VALUES: true
   when: pm_config.storage is defined
 
+# region TODO: SELinux adjustment
 ## TODO: not sure how to perform as the following command. Stuck on the -e argument which makes the new path equal to old path.
 # semanage fcontext -a -e /var/lib/containers/storage /NEWSTORAGEPATH
 # ALSO: need to run the following command if this state is changed, perhaps via cmd module?
@@ -23,6 +21,7 @@
 #     setype: httpd_git_rw_content_t
 #     state: present
 #   when: pm_config.storage.storage.graphroot is defined
+# endregion
       
 - name: "Podman | {{ pm_user }} | Config | Podman container options"
   ansible.builtin.copy:

@@ -1,16 +1,8 @@
 ---
 - name: "Podman | {{ pm_user }} | Rootless | Create configuration directory"
   ansible.builtin.file:
-    path: ~/.config/containers/
+    path: $HOME/.config/containers/
     state: directory
     mode: '0750'
     # recurse: yes
   become_user: "{{ pm_user }}"
-
-# - name: create rootless cache directory
-#   ansible.builtin.file:
-#     path: ~/.cache/tmp/
-#     state: directory
-#     mode: '0750'
-#     # recurse: yes
-#   become_user: "{{ pm_user }}"
