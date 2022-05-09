@@ -7,10 +7,10 @@
     # recurse: yes
   when: pm_user != "root"
 
-- name: "Podman | {{ pm_user }} | Systemd | Enable User Socket"
+- name: "Podman | {{ pm_user }} | Systemd | Enable User Socket: {{ pm_systemd.enable_socket | default('false') }}"
   ansible.builtin.systemd:
     name: podman.socket
-    state: started
+    state: "{% if pm_systemd.enable_socket | default('false') %}started{% else %}stopped{% endif %}"
     enabled: "{{ pm_systemd.enable_socket | default('false') }}"
     scope: "{% if pm_user == 'root' %}system{% else %}user{% endif %}"
 
