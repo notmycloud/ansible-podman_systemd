@@ -15,8 +15,8 @@
     name: linuxhq.sysctl
   vars:
     sysctl_d:
-      - file: podman
-        order: 00
+      - file: podman-port
+        order: '00'
         settings:
           net.ipv4.ip_unprivileged_port_start: "{{ PODMAN_SYSTEMD_ALLOW_LOWEST_PORT }}"
   when: PODMAN_SYSTEMD_ALLOW_LOWEST_PORT is defined
@@ -26,8 +26,8 @@
     name: linuxhq.sysctl
   vars:
     sysctl_d:
-      - file: podman
-        order: 00
+      - file: podman-ping
+        order: '00'
         settings:
           net.ipv4.ping_group_range: "0 4294967295"
   when: PODMAN_SYSTEMD_ALLOW_PING is defined
