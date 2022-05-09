@@ -17,6 +17,7 @@
 - name: "Podman | {{ pm_user }} | Systemd | Create container services"
   ansible.builtin.include_tasks: 
     file: "container.yaml"
+  no_log: true
   vars:
     container_name: "{{ pm_container.key }}"
     container: "{{ pm_container.value }}"
@@ -32,6 +33,7 @@
   vars:
     pod: "{{ pm_pod.key }}"
     isPod: yes
+  no_log: true
   when:
     - pm_systemd.pods is defined
   loop: "{{ pm_systemd.pods | dict2items }}"

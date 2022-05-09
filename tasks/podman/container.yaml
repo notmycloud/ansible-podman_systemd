@@ -141,6 +141,7 @@
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create service config"
   ansible.builtin.set_fact:
     container_dict: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
+  no_log: true
   loop: "{{ (keys | zip(values)) | list }}"
   vars:
     keys:
@@ -152,6 +153,8 @@
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd config"
   ansible.builtin.set_fact:
     systemd_units: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
+  no_log: true
+  no_log: true
   loop: "{{ (keys | zip(values)) | list }}"
   vars:
     keys:

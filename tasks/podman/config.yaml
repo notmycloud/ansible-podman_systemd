@@ -52,6 +52,7 @@
     registry: "{{ login.registry | default(omit) }}"
     tlsverify: "{{ login.tlsverify | default(omit) }}"
     username: "{{ login.username }}"
+  no_log: true
   when: pm_config.login is defined
   loop: "{{ pm_config.login }}"
   loop_control:
