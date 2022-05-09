@@ -99,6 +99,11 @@ PODMAN_SYSTEMD_DEPLOY:
             # Follow above PODMAN_SYSTEMD_DEPLOY.USERNAME.systemd.containers.CONTAINERNAME syntax
 ```
 
+## Podman Socket
+
+Root socket will be enabled at: `/run/podman/podman.sock`
+Rootless socket will be enabled at : `/run/user/$UID/podman/podman.sock`
+
 ## Support
 For support, please raise an issue and provide the following items
 - Sample task/playbook to replicate your issue
