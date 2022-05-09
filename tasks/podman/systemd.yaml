@@ -7,6 +7,13 @@
     # recurse: yes
   when: pm_user != "root"
 
+- name: "Podman | {{ pm_user }} | Systemd | Enable User Socket"
+  ansible.builtin.systemd:
+    name: podman.socket
+    state: started
+    enabled: "{{ pm_systemd.enable_socket | default('false') }}"
+    scope: "{% if pm_user == 'root' %}system{% else %}user{% endif %}"
+
 - name: "Podman | {{ pm_user }} | Systemd | Create container services"
   ansible.builtin.include_tasks: 
     file: "container.yaml"

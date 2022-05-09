@@ -66,6 +66,7 @@ PODMAN_SYSTEMD_DEPLOY:
           username: registryuser
           password: super$3(r37Password
     systemd:
+      enable_socket: # Default False, enables the Podman API socket for the user or if under root, system wide.
       containers:
         CONTAINERNAME: # Replace this with the name you desire for the container, this will also be utilized for the Systemd Unit file.
           podman_options:
