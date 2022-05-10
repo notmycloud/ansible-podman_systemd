@@ -16,6 +16,7 @@
     name: "{{ item }}"
     state: present
   loop:
+    - fuse-overlayfs
     - podman
     - runc
     - buildah
