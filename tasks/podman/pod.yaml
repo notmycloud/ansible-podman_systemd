@@ -33,6 +33,7 @@
               -p {{ port }}
               {% endfor %}
               {% endif %}
+              {{ pm_pod.value.infra.podman_options.other_options | default(none) }}
           ExecStart: 
             - "/usr/bin/podman pod start --pod-id-file %t/%n.pod-id"
           ExecStop: 
