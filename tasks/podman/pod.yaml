@@ -72,6 +72,10 @@
       - enable_linger: "{% if pm_user == 'root' %}no{% else %}{{ pm_systemd.enable_linger | default('true')}}{% endif %}"
         service: "{{ container_dict }}"
 
+- name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Create systemd service"
+  ansible.builtin.include_role:
+    name: notmycloud.systemd_unit
+
 - name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Create pod container services"
   ansible.builtin.include_tasks: 
     file: "container.yaml"
