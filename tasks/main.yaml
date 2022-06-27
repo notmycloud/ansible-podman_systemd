@@ -39,6 +39,7 @@
     path: /bin/ping
     capability: cap_net_raw+ep
     state: present
+  become: true
   when: PODMAN_SYSTEMD_ALLOW_PING is defined
 
 # Region cni.lock error
