@@ -21,15 +21,24 @@
           net.ipv4.ip_unprivileged_port_start: "{{ PODMAN_SYSTEMD_ALLOW_LOWEST_PORT }}"
   when: PODMAN_SYSTEMD_ALLOW_LOWEST_PORT is defined
 
-- name: "Podman | Sysctl | Allow Unprivileged Ping"
-  ansible.builtin.include_role:
-    name: linuxhq.sysctl
-  vars:
-    sysctl_d:
-      - file: podman-ping
-        order: '00'
-        settings:
-          net.ipv4.ping_group_range: "0 4294967295"
+# Disabled as aparently this option is no longer supported/best practice.
+# - name: "Podman | Sysctl | Allow Unprivileged Ping"
+#   ansible.builtin.include_role:
+#     name: linuxhq.sysctl
+#   vars:
+#     sysctl_d:
+#       - file: podman-ping
+#         order: '00'
+#         settings:
+#           net.ipv4.ping_group_range: "0 4294967295"
+#   when: PODMAN_SYSTEMD_ALLOW_PING is defined
+
+# New method to allow all users to ping
+- name: Set cap_sys_chroot+ep on /foo
+  community.general.capabilities:
+    path: /bin/ping
+    capability: cap_net_raw+ep
+    state: present
   when: PODMAN_SYSTEMD_ALLOW_PING is defined
 
 # Region cni.lock error
