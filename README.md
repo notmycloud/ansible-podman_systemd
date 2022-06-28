@@ -90,7 +90,7 @@ PODMAN_SYSTEMD_DEPLOY:
                 options:
                 type: # file/directory
             labels: # Array of label strings
-            other_options: # string of other options to pass to podman run
+            other_options: # String or Array of other options to pass to podman run
           service_options: # See notmycloud.systemd_unit variable depth equal to UNIT_NAME
       pods:
         PODNAME: # Replace this with the name you desire for the pod, this will also be utilized to prefix the associated containers.

@@ -81,7 +81,15 @@
       -l "{{ label }}"
       {% endfor %}
       {% endif %}
-      {{ container.podman_options.other_options | default(none) }}
+      {% if container.podman_options.other_options is defined %}
+      {% if container.podman_options.other_options is string %}
+      {{ container.podman_options.other_options }}
+      {% else %}
+      {% for option in container.podman_options.other_options %}
+      {{ option }}
+      {% endfor %}
+      {% endif %}
+      {% endif %}
       {{ container.podman_options.image }}
       {% if container.podman_options.image_command is defined %}
       {{ container.podman_options.image_command }}
