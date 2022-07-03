@@ -89,7 +89,8 @@ PODMAN_SYSTEMD_DEPLOY:
                 container:
                 options:
                 type: # file/directory
-            labels: # Array of label strings
+            labels: # Array of key value paris
+              key: "value"
             other_options: # String or Array of other options to pass to podman run
           service_options: # See notmycloud.systemd_unit variable depth equal to UNIT_NAME
       pods:

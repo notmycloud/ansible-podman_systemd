@@ -78,7 +78,7 @@
       {% endif %}
       {% if container.podman_options.labels is defined %}
       {% for label in container.podman_options.labels %}
-      -l "{{ label }}"
+      -l={{ label }}="{{ container.podman_options.labels[label] }}"
       {% endfor %}
       {% endif %}
       {% if container.podman_options.other_options is defined %}
