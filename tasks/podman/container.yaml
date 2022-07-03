@@ -73,7 +73,7 @@
       {% endif %}
       {% if container.podman_options.volumes is defined %}
       {% for volume in container.podman_options.volumes %}
-      -v {{ volume.host | default(none) | replace('$HOME', '%h') | replace('$XDG_CONFIG_HOME', '%E') }}{% if volume.host is defined %}:{% endif %}{{ volume.container }}{% if volume.options is defined %}:{% endif %}{{ volume.options }}
+      -v {{ volume.host | default(none) | replace('$HOME', '%h') | replace('$XDG_CONFIG_HOME', '%E') | replace('$XDG_RUNTIME_DIR', '%t') }}{% if volume.host is defined %}:{% endif %}{{ volume.container }}{% if volume.options is defined %}:{% endif %}{{ volume.options }}
       {% endfor %}
       {% endif %}
       {% if container.podman_options.labels is defined %}
