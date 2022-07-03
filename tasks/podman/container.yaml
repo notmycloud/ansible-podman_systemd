@@ -63,7 +63,7 @@
       {% endif %}
       {% if container.podman_options.environment is defined %}
       {% for env in container.podman_options.environment %}
-      --env {{ env }}={{ container.podman_options.environment[env] }}
+      --env "{{ env }}={{ container.podman_options.environment[env] }}"
       {% endfor %}
       {% endif %}
       {% if container.podman_options.ports is defined %}
