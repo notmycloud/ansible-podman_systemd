@@ -26,6 +26,7 @@
               --name {{ pod }}
               --net slirp4netns:allow_host_loopback=true,enable_ipv6=true
               --infra-conmon-pidfile %t/%n.pid
+              --infra-name={{ pod }}-infra
               --pod-id-file %t/%n.pod-id
               --replace
               {% if pm_pod.value.infra.podman_options.ports is defined %}
