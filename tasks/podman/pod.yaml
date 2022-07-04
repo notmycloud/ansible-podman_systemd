@@ -29,12 +29,36 @@
               --infra-name={{ pod }}-infra
               --pod-id-file %t/%n.pod-id
               --replace
+              
               {% if pm_pod.value.infra.podman_options.ports is defined %}
               {% for port in pm_pod.value.infra.podman_options.ports %}
               -p {{ port }}
               {% endfor %}
               {% endif %}
-              {{ pm_pod.value.infra.podman_options.other_options | default(none) }}
+
+              {% if container.podman_options.labels is defined %}
+              {% if container.podman_options.labels is string %}
+              -l={{ container.podman_options.labels }}
+              {% else %}
+              {% for label in container.podman_options.labels %}
+              {% if label is string %}
+              -l={{ label }}
+              {% else %}
+              -l={{ label }}="{{ container.podman_options.labels[label] }}"
+              {% endif %}
+              {% endfor %}
+              {% endif %}
+              {% endif %}
+
+              {% if container.podman_options.other_options is defined %}
+              {% if container.podman_options.other_options is string %}
+              {{ container.podman_options.other_options }}
+              {% else %}
+              {% for option in container.podman_options.other_options %}
+              {{ option }}
+              {% endfor %}
+              {% endif %}
+              {% endif %}
           ExecStart: 
             - "/usr/bin/podman pod start --pod-id-file %t/%n.pod-id"
           ExecStop: 

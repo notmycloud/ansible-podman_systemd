@@ -22,25 +22,32 @@
     podman_start_cmd: |-
       /usr/bin/podman run
       --name {{ container_name }}
+
       {% if isPod %}
       --pod {{ pod }}
       {% else %}
       -d
       {% endif %}
+
       --cidfile=%t/%n.ctr-id --sdnotify=conmon --cgroups=no-conmon
       --conmon-pidfile=%t/%n.pid
+
       {% if not isPod or container.podman_options.network is defined %}
       --network {{ container.podman_options.network | default("slirp4netns:allow_host_loopback=true,enable_ipv6=true") }}
       {% endif %}
+
       {% if container.podman_options.replace is defined %}
       {% if container.podman_options.replace | default("true") %}
       --replace
       {% endif %}
       {% endif %}
+
       --restart {{ container.podman_options.restart | default("no") }}
+
       {% if container.podman_options.remove | default('true') %}
       --rm
       {% endif %}
+
       {% if container.podman_options.healthcheck is defined %}
       {% if container.podman_options.healthcheck.cmd is defined %}
       --health-cmd '{{ container.podman_options.healthcheck.cmd }}'
@@ -61,26 +68,39 @@
       --health-start-period {{ container.podman_options.healthcheck.start_period }}
       {% endif %}
       {% endif %}
+
       {% if container.podman_options.environment is defined %}
       {% for env in container.podman_options.environment %}
       --env "{{ env }}={{ container.podman_options.environment[env] }}"
       {% endfor %}
       {% endif %}
+
       {% if container.podman_options.ports is defined %}
       {% for port in container.podman_options.ports %}
       -p {{ port }}
       {% endfor %}
       {% endif %}
+
       {% if container.podman_options.volumes is defined %}
       {% for volume in container.podman_options.volumes %}
       -v {{ volume.host | default(none) | replace('$HOME', '%h') | replace('$XDG_CONFIG_HOME', '%E') | replace('$XDG_RUNTIME_DIR', '%t') }}{% if volume.host is defined %}:{% endif %}{{ volume.container }}{% if volume.options is defined %}:{% endif %}{{ volume.options }}
       {% endfor %}
       {% endif %}
+
       {% if container.podman_options.labels is defined %}
+      {% if container.podman_options.labels is string %}
+      -l={{ container.podman_options.labels }}
+      {% else %}
       {% for label in container.podman_options.labels %}
+      {% if label is string %}
+      -l={{ label }}
+      {% else %}
       -l={{ label }}="{{ container.podman_options.labels[label] }}"
+      {% endif %}
       {% endfor %}
       {% endif %}
+      {% endif %}
+
       {% if container.podman_options.other_options is defined %}
       {% if container.podman_options.other_options is string %}
       {{ container.podman_options.other_options }}
@@ -90,10 +110,13 @@
       {% endfor %}
       {% endif %}
       {% endif %}
+
       {{ container.podman_options.image }}
+
       {% if container.podman_options.image_command is defined %}
       {{ container.podman_options.image_command }}
       {% endif %}
+      
       {% if container.podman_options.image_args is defined %}
       {% for arg in container.podman_options.image_args %}
       {{ arg }}
