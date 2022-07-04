@@ -1,4 +1,45 @@
 ---
+- name: "Podman | {{ pm_user }} | Systemd | Pod | {{ containerpod_name }} | Construct Podman Pod Create command"
+  ansible.builtin.set_fact:
+    podman_pod_create_cmd: |-
+      /usr/bin/podman pod create
+      --name {{ pod }}
+      --net slirp4netns:allow_host_loopback=true,enable_ipv6=true
+      --infra-conmon-pidfile %t/%n.pid
+      --infra-name={{ pod }}-infra
+      --pod-id-file %t/%n.pod-id
+      --replace
+
+      {% if pm_pod.value.infra.podman_options.ports is defined %}
+      {% for port in pm_pod.value.infra.podman_options.ports %}
+      -p {{ port }}
+      {% endfor %}
+      {% endif %}
+
+      {% if container.podman_options.labels is defined %}
+      {% if container.podman_options.labels is string %}
+      -l={{ container.podman_options.labels }}
+      {% else %}
+      {% for label in container.podman_options.labels %}
+      {% if label is string %}
+      -l={{ label }}
+      {% else %}
+      -l={{ label }}="{{ container.podman_options.labels[label] }}"
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+      {% endif %}
+
+      {% if container.podman_options.other_options is defined %}
+      {% if container.podman_options.other_options is string %}
+      {{ container.podman_options.other_options }}
+      {% else %}
+      {% for option in container.podman_options.other_options %}
+      {{ option }}
+      {% endfor %}
+      {% endif %}
+      {% endif %}
+
 - name: "Podman | {{ pm_user }} | Systemd | Pod | {{ pod }} | Construct Podman service options"
   ansible.builtin.set_fact:
     podman_service:
@@ -21,44 +62,7 @@
             - '-/bin/rm -f %t/%n.pod-id'
             - '-/bin/rm -f %t/%n.pid'
             # - "-/usr/bin/podman pod rm -f {{ pod }}"
-            - >-
-              /usr/bin/podman pod create
-              --name {{ pod }}
-              --net slirp4netns:allow_host_loopback=true,enable_ipv6=true
-              --infra-conmon-pidfile %t/%n.pid
-              --infra-name={{ pod }}-infra
-              --pod-id-file %t/%n.pod-id
-              --replace
-              
-              {% if pm_pod.value.infra.podman_options.ports is defined %}
-              {% for port in pm_pod.value.infra.podman_options.ports %}
-              -p {{ port }}
-              {% endfor %}
-              {% endif %}
-
-              {% if container.podman_options.labels is defined %}
-              {% if container.podman_options.labels is string %}
-              -l={{ container.podman_options.labels }}
-              {% else %}
-              {% for label in container.podman_options.labels %}
-              {% if label is string %}
-              -l={{ label }}
-              {% else %}
-              -l={{ label }}="{{ container.podman_options.labels[label] }}"
-              {% endif %}
-              {% endfor %}
-              {% endif %}
-              {% endif %}
-
-              {% if container.podman_options.other_options is defined %}
-              {% if container.podman_options.other_options is string %}
-              {{ container.podman_options.other_options }}
-              {% else %}
-              {% for option in container.podman_options.other_options %}
-              {{ option }}
-              {% endfor %}
-              {% endif %}
-              {% endif %}
+            - "{{ podman_pod_create_cmd | trim | regex_replace('\n+', ' \\\n') | indent(4, False) }}"
           ExecStart: 
             - "/usr/bin/podman pod start --pod-id-file %t/%n.pod-id"
           ExecStop: 
