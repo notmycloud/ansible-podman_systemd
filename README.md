@@ -75,6 +75,8 @@ PODMAN_SYSTEMD_DEPLOY:
             replace: # bool
             restart: # "always"|"no"|"on-failure"|"unless-stopped" default no
             remove: # Defaults to yes
+            stop_timeout: # Defaults to 60 seconds
+            log_driver: # Defaults to Passthrough, so you can view your logs in the Journal
             healthcheck:
               cmd:
               interval:
@@ -98,12 +100,27 @@ PODMAN_SYSTEMD_DEPLOY:
           pod_service_options: # See notmycloud.systemd_unit variable depth equal to UNIT_NAME
           CONTAINERNAME:
             # Follow above PODMAN_SYSTEMD_DEPLOY.USERNAME.systemd.containers.CONTAINERNAME syntax
-```
+``` 
 
-## Podman Socket
+## Other Notes
+
+### Podman Socket
 
 Root socket will be enabled at: `/run/podman/podman.sock`
 Rootless socket will be enabled at : `/run/user/$UID/podman/podman.sock`
+
+### Container Config directory
+
+I recommend that you use `%E/%N/` as your config root.  
+This will store the configuration in either `~/.config/{service_name}/` or `/etc/{service_name}/`.  
+For containers that need multiple config directories I will use `%E/%N/config1/`, `%E/%N/config2/`, etc...
+
+### Recommended other_options
+
+`--init` Run an init inside the container that forwards signals and reaps processes. See containers/podman#1670 for more info  
+`--cap-drop=all` Drop all capabilities, you will most likely need to add capabilities for your container to work properly.  
+`--security-opt=no-new-privileges` Disable container processes from gaining additional privileges. See the [docs](https://docs.podman.io/en/latest/markdown/podman-run.1.html#security-opt-option) for more info.  
+`--userns=keep-id` Maps the container user to the host user ID. 
 
 ## Support
 For support, please raise an issue and provide the following items

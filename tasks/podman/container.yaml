@@ -36,17 +36,19 @@
       --network {{ container.podman_options.network | default("slirp4netns:allow_host_loopback=true,enable_ipv6=true") }}
       {% endif %}
 
-      {% if container.podman_options.replace is defined %}
+      --restart {{ container.podman_options.restart | default("no") }}
+
       {% if container.podman_options.replace | default("true") %}
       --replace
       {% endif %}
-      {% endif %}
-
-      --restart {{ container.podman_options.restart | default("no") }}
 
       {% if container.podman_options.remove | default('true') %}
       --rm
       {% endif %}
+
+      --stop-timeout {{ container.podman_options.stop_timeout | default("60") }}
+
+      --log-driver={{ container.podman_options.log_driver | default("passthrough") }}
 
       {% if container.podman_options.healthcheck is defined %}
       {% if container.podman_options.healthcheck.cmd is defined %}
@@ -162,8 +164,10 @@
           - '/usr/bin/podman rm -f --ignore --cidfile=%t/%n.ctr-id'
         Type: notify
         NotifyAccess: all
+        KillMode: mixed
         PIDFile: '%t/%n.pid'
         Restart: 'on-failure'
+        SyslogIdentifier: '%N'
       Install:
         WantedBy: 
           - multi-user.target
