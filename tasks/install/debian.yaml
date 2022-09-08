@@ -5,11 +5,11 @@
   ansible.builtin.apt_key:
     id: "789CFFDE0295B8A1F4E5690C4BECC97550D0B1FD"
     keyring: "/etc/apt/trusted.gpg.d/home_alvistack.gpg"
-    url: "http://download.opensuse.org/repositories/home:/alvistack/{{ ansible_distribution }}_{{ ansible_distribution_major_version | lower }}/Release.key"
+    url: "http://downloadcontent.opensuse.org/repositories/home:/alvistack/{{ ansible_distribution }}_{{ ansible_distribution_major_version | lower }}/Release.key"
 
 - name: "Podman | {{ ansible_os_family }} | Install Alvistack Repo for latest Podman"
   ansible.builtin.apt_repository:
-    repo: "deb http://download.opensuse.org/repositories/home:/alvistack/{{ ansible_distribution }}_{{ ansible_distribution_major_version | lower }}/ /"
+    repo: "deb http://downloadcontent.opensuse.org/repositories/home:/alvistack/{{ ansible_distribution }}_{{ ansible_distribution_major_version | lower }}/ /"
 
 - name: "Podman | {{ ansible_os_family }} | Installing Podman packages"
   ansible.builtin.package:
