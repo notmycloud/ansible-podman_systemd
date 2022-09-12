@@ -78,7 +78,7 @@
 
       {% if container.podman_options.environment is defined %}
       {% for env in container.podman_options.environment %}
-      {% if '"' in container.podman_options.environment[env] %}
+      {% if container.podman_options.environment[env] is iterable and '"' in container.podman_options.environment[env] %}
       --env '{{ env }}={{ container.podman_options.environment[env] }}'
       {% else %}
       --env "{{ env }}={{ container.podman_options.environment[env] }}"
