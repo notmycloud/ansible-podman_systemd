@@ -34,7 +34,7 @@
 #   when: PODMAN_SYSTEMD_ALLOW_PING is defined
 
 # New method to allow all users to ping
-- name: Set cap_sys_chroot+ep on /bin/ping
+- name: Set cap_net_raw+ep on /bin/ping
   community.general.capabilities:
     path: /bin/ping
     capability: cap_net_raw+ep
