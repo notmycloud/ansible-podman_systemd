@@ -17,6 +17,11 @@
     name: "{{ container.podman_options.image.split(':')[0] }}"
     tag: "{{ container.podman_options.image.split(':')[1] }}"
 
+- name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Debug Container Info"
+  ansible.builtin.debug:
+    var: container
+  when: debug_log == true
+
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Construct Podman command"
   ansible.builtin.set_fact:
     podman_start_cmd: |-

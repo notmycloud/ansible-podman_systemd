@@ -29,6 +29,7 @@ PODMAN_SYSTEMD_DEPLOY:
 ## User configuration
 Root will be configured under the default `/etc/systemd/system` directory wheras users will be configured under `~/.config/system/user` directory. In this example, we will configure for an unprivileged user.
 ```
+debug_log: bool # set to true to enable task and debug logging
 PODMAN_SYSTEMD_DEPLOY:
   myuser:
     config:

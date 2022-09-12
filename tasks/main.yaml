@@ -55,7 +55,7 @@
 - name: "Podman | User | Configuration"
   ansible.builtin.include_tasks: 
     file: "user.yaml"
-  no_log: true
+  no_log: "{{ not debug_log }}"
   vars:
     pm_user: "{{ podman.key }}"
   loop: "{{ PODMAN_SYSTEMD_DEPLOY | dict2items }}"
