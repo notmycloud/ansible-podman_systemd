@@ -25,6 +25,7 @@
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Construct Podman command"
   ansible.builtin.set_fact:
     podman_start_cmd: |-
+      /bin/bash -c '
       /usr/bin/podman run
       --name {{ container_name }}
 
@@ -47,7 +48,7 @@
       --replace
       {% endif %}
 
-      {% if container.podman_options.remove | default('true') %}
+      {% if container.podman_options.remove | default("true") %}
       --rm
       {% endif %}
 
@@ -57,7 +58,7 @@
 
       {% if container.podman_options.healthcheck is defined %}
       {% if container.podman_options.healthcheck.cmd is defined %}
-      --health-cmd '{{ container.podman_options.healthcheck.cmd }}'
+      --health-cmd \'{{ container.podman_options.healthcheck.cmd }}\'
       {% endif %}
       {% if container.podman_options.healthcheck.interval is defined %}
       --health-interval {{ container.podman_options.healthcheck.interval }}
@@ -79,7 +80,7 @@
       {% if container.podman_options.environment is defined %}
       {% for env in container.podman_options.environment %}
       {% if container.podman_options.environment[env] is iterable and '"' in container.podman_options.environment[env] %}
-      --env '{{ env }}={{ container.podman_options.environment[env] }}'
+      --env \'{{ env }}={{ container.podman_options.environment[env] }}\'
       {% else %}
       --env "{{ env }}={{ container.podman_options.environment[env] }}"
       {% endif %}
@@ -133,6 +134,7 @@
       {{ arg }}
       {% endfor %}
       {% endif %}
+      '
 
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Construct Podman service options"
   ansible.builtin.set_fact:
@@ -197,7 +199,6 @@
 - name: "Podman | {{ pm_user }} | Systemd | Container | {{ container_name }} | Create systemd config"
   ansible.builtin.set_fact:
     systemd_units: "{{ mydict | default({}) | combine({item[0]: item[1]}) }}"
-  no_log: true
   no_log: true
   loop: "{{ (keys | zip(values)) | list }}"
   vars:
